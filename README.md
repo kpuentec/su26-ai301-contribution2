@@ -17,21 +17,32 @@ The fix is well-scoped: one file, three methods, a clear before/after. I also ha
 
 ## Understanding the Issue
 
-### Problem Description
-
-
+`TicklerWebService.java` logs the full JSON request body verbatim at INFO 
+level in three mutation endpoints via `MiscUtils.getLogger().info(json.toString())`. 
+Application logs are not an appropriate store for patient-correlating data. 
+The `complete` and `delete` payloads contain tickler IDs, and the `update` 
+payload is higher risk since it includes clinical task fields like `message`, 
+`taskAssignedTo`, and `serviceDate`. Any log aggregation system or monitoring 
+tool ingesting these logs now has a secondary store of patient-correlating data.
 
 ### Expected Behavior
-
-
+The three mutation endpoints should either log nothing, or log only safe 
+operational metadata (action name, count of ticklers processed, success/failure 
+result) using `LogSafe.sanitize()` per the project's established convention 
+from PR #2611.
 
 ### Current Behavior
-
-
+All three methods call `MiscUtils.getLogger().info(json.toString())` 
+immediately after the privilege check. The full raw JSON body — including 
+tickler IDs, message text, task assignments, and service dates — is written 
+to the application log at INFO level on every request.
 
 ### Affected Components
-
-
+`src/main/java/io/github/carlos_emr/carlos/webserv/rest/TicklerWebService.java`:
+- `completeTicklers()` — logs tickler ID array
+- `deleteTicklers()` — logs tickler ID array
+- `updateTickler()` — logs full tickler update payload including message 
+  text and service date
 
 ---
 
