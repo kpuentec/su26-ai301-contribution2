@@ -50,16 +50,38 @@ to the application log at INFO level on every request.
 
 ### Environment Setup
 
-PHASE II
+Same environment as Contribution 1 — CARLOS EMR running via Docker Desktop 
+and docker-compose. Brought containers back up with `docker-compose up -d` 
+and rebuilt with `export MAVEN_OPTS="-Xmx1512m -Xms512m" && make install`. 
+Used `tail -f /usr/local/tomcat/logs/catalina.out` in one terminal to stream 
+logs live while sending curl requests from another.
 
 ### Steps to Reproduce
 
-PHASE II
+1. Log into CARLOS at `http://localhost:8080/carlos`
+2. Grab session cookie `JSESSIONID` from browser DevTools → Application → Cookies
+3. Send a POST to `/tickler/complete`:
+```bash
+curl -X POST http://localhost:8080/carlos/ws/rs/tickler/complete \
+  -H "Content-Type: application/json" \
+  -H "Cookie: JSESSIONID=" \
+  -d '{"ticklers":[1]}'
+```
+4. Observe the log output in `catalina.out`
 
+**Expected:** No request body content in logs  
+**Actual:** `INFO rest.TicklerWebService (TicklerWebService.java:276) - {"ticklers":[1]}` — full raw JSON logged at INFO level
 
 ### Reproduction Evidence
 
-PHASE II
+- **Branch:** https://github.com/kpuentec/carlos/tree/2982-bug-ticklerwebservice-phi-logging
+- **Screenshots:**
+  - ![Before fix - raw JSON logged at INFO level](assets/ss1.png)
+- **My findings:** The log line fires before any business logic executes, 
+  meaning even failed requests (e.g. invalid payload) still leak the full 
+  JSON body to logs. All three endpoints confirmed affected via curl — 
+  `completeTicklers` (line 276), `deleteTicklers` (line 302), and 
+  `updateTickler` (line 359).
 
 ---
 
