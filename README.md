@@ -89,40 +89,71 @@ curl -X POST http://localhost:8080/carlos/ws/rs/tickler/complete \
 
 ### Analysis
 
-PHASE III
-
+Root cause is three identical `MiscUtils.getLogger().info(json.toString())` 
+calls in `TicklerWebService.java` — one each in `completeTicklers()` (line 276), 
+`deleteTicklers()` (line 302), and `updateTickler()` (line 359). Each fires 
+immediately after the privilege check, logging the complete request body before 
+any processing occurs. The precedent for the fix is PR #2611, which established 
+the `LogSafe.sanitize()` pattern for safe logging in this codebase.
 ### Proposed Solution
 
-PHASE III
+Remove the three raw log lines and replace with safe operational metadata 
+logging at DEBUG level using `LogSafe.sanitize()`, following PR #2611's pattern.
 
 ### Implementation Plan
 
-PHASE III
+**Understand:** Three mutation endpoints log the full raw JSON request body at 
+INFO level, potentially exposing tickler IDs, message text, and clinical task 
+fields to application logs.
+
+**Match:** PR #2611 established the pattern — use `LogSafe.sanitize()` for any 
+identifier that must be logged, and use structured parameterized logging rather 
+than raw object serialization.
 
 **Plan:**
-PHASE III
+1. Replace `MiscUtils.getLogger().info(json.toString())` in `completeTicklers()` 
+   with count-only debug log
+2. Same replacement in `deleteTicklers()`
+3. Replace in `updateTickler()` with sanitized ID debug log using `LogSafe.sanitize()`
+4. Add `LogSafe` import
+5. Add null guards on `json` parameter
 
-**Implement:** 
+**Implement:** https://github.com/kpuentec/carlos/tree/2982-bug-ticklerwebservice-phi-logging
 
-**Review:** 
+**Review:** Match `LogSafe.sanitize()` pattern from PR #2611, DCO sign-off, 
+target `develop`.
 
-**Evaluate:** 
+**Evaluate:** Re-run curl commands and confirm no raw JSON in `catalina.out`. 
+Run `make install` to confirm no regressions.
 
 ---
 
 ## Testing Strategy
 
 ### Manual Testing
+This fix removes three logging statements with no new business logic, so 
+automated tests don't map cleanly onto it. Verified by tailing `catalina.out` 
+while sending authenticated curl requests to each endpoint.
 
-PHASE IV
+- **completeTicklers (line 276):** Before fix — `INFO rest.TicklerWebService (TicklerWebService.java:276) - {"ticklers":[1]}` in logs. After fix — no request body content, endpoint returns 200 SUCCESS.
+- **deleteTicklers (line 302):** Same pattern confirmed — raw JSON line absent after fix.
+- **updateTickler (line 359):** Full payload including message text logged before fix. After fix — no request body content in logs.
+- **Regression check:** `make install` built clean. All three endpoints continue returning 200 SUCCESS.
+
+**Before (raw JSON in logs):**
+![Before fix - raw JSON logged at INFO level](assets/ss1.png)
+
+**After (no request body in logs):**
+![After fix - raw JSON line absent from logs](assets/ss2.png)
 
 ---
 
 ## Implementation Notes
 
-### Week 3 Progress
-
-PHASE IV
+### Week 2 Progress
+Implemented the fix: removed three raw log calls and replaced with safe 
+operational metadata at DEBUG level. Added `LogSafe` import. Applied null 
+guards on `json` parameter per Gemini Code Assist feedback in a follow-up commit.
 
 **What I built:**
 PHASE IV
