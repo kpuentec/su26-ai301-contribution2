@@ -5,6 +5,7 @@
 **Issue:** [[GitHub issue link]](https://github.com/carlos-emr/carlos/issues/2982)  
 **Status:** Phase IV Complete
 
+**Contribution 3:** https://github.com/kpuentec/su26-ai301-contribution3
 ---
 
 ## Why I Chose This Issue
