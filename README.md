@@ -3,7 +3,7 @@
 **Contribution Number:** 2  
 **Student:** Kevin Cortez  
 **Issue:** [[GitHub issue link]](https://github.com/carlos-emr/carlos/issues/2982)  
-**Status:** Phase II Complete
+**Status:** Phase IV Complete
 
 ---
 
@@ -155,48 +155,47 @@ Implemented the fix: removed three raw log calls and replaced with safe
 operational metadata at DEBUG level. Added `LogSafe` import. Applied null 
 guards on `json` parameter per Gemini Code Assist feedback in a follow-up commit.
 
-**What I built:**
-PHASE IV
-PHASE IV
 ### Code Changes
-
-- **Files modified:** PHASE IV
+- **Files modified:** `src/main/java/io/github/carlos_emr/carlos/webserv/rest/TicklerWebService.java`
 - **Key commits:**
-PHASE IV
-- **Approach decisions:** PHASE IV 
+  - [4f617e6bb1](https://github.com/kpuentec/carlos/commit/4f617e6bb1) — "fix: remove raw JSON request body logging from tickler mutation endpoints"
+  - [979ff6d40b](https://github.com/kpuentec/carlos/commit/979ff6d40b) — "fix: add null guard on json parameter in tickler debug log lines"
+- **Approach decisions:** Followed the `LogSafe.sanitize()` pattern from PR #2611. Used DEBUG level so safe metadata is suppressed in production but available when debug logging is enabled. Added null guard on `json` parameter to prevent NPE on empty/malformed request bodies.
 
 ---
 
-## Pull Request
+**PR Link:** https://github.com/carlos-emr/carlos/pull/3136
 
-**PR Link:** PHASE IV
-
-**PR Description:** PHASE IV
+**PR Description:** Removes raw JSON request body logging from three tickler mutation endpoints in `TicklerWebService.java`, replacing verbatim `json.toString()` calls with safe operational metadata at DEBUG level using `LogSafe.sanitize()` to prevent PHI-correlating data from persisting in application logs.
 
 **Maintainer Feedback:**
-PHASE IV
+- **Jul 6:** Gemini Code Assist flagged missing null guards on `json` parameter across all three log lines — accessing `json.has()` directly could NPE on empty/malformed requests. Applied null guards in follow-up commit `979ff6d40b`.
+- **Jul 6:** CodeRabbit suggested extracting a shared helper for the duplicate count expression — labeled trivial/low value. Not addressing unless Ben-Heerema requests it.
 
-
-**Status:** Not Merged
+**Status:** Merged
 
 ---
 
 ## Learnings & Reflections
 
 ### Technical Skills Gained
-
-PHASE IV
+- PHI logging risks in healthcare software and why application logs are not an appropriate store for patient-correlating data.
+- `LogSafe.sanitize()` pattern and when to use DEBUG vs INFO level logging.
+- How to reproduce a REST API vulnerability using curl with session cookies rather than relying on the UI.
 
 ### Challenges Overcome
-
-PHASE IV
+- The Tickler Manager UI went through a different code path than the REST endpoints we needed to test — had to use authenticated curl requests with a session cookie grabbed from browser DevTools to hit the actual vulnerable endpoints.
+- Initially missed the null guard on the `json` parameter — caught by Gemini Code Assist during PR review and fixed in a follow-up commit.
 
 ### What I'd Do Differently Next Time
+- Add null guards upfront when writing any defensive log lines rather than waiting for a reviewer to flag it.
+- Check earlier whether the UI actually triggers the specific endpoint being tested rather than assuming it does.
 
-PHASE IV
 ---
 
 ## Resources Used
 
+## Resources Used
 - [CARLOS CONTRIBUTING.md](https://github.com/carlos-emr/carlos/blob/develop/CONTRIBUTING.md)
-PHASE IV
+- [Issue #2982](https://github.com/carlos-emr/carlos/issues/2982)
+- [PR #2611 — Sanitize PHI-correlating identifiers in lab debug logging](https://github.com/carlos-emr/carlos/pull/2611)
